@@ -146,7 +146,7 @@ main {
 }
 
 .bomb-emoji.ticking {
-  animation: wiggle 0.45s infinite;
+  animation: wiggle var(--wiggle-speed, 0.45s) infinite;
   filter: drop-shadow(0 0 16px rgba(255, 100, 0, 0.8));
 }
 
@@ -173,6 +173,26 @@ main {
   color: #ffd700;
   min-height: 2rem;
   text-shadow: 0 0 10px rgba(255,215,0,0.5);
+}
+
+.curse-display {
+  margin-top: 10px;
+  font-size: 0.95rem;
+  min-height: 1.4rem;
+  color: #ff9966;
+  transition: color 0.3s;
+}
+
+.curse-display.hot {
+  color: #ff4444;
+  font-weight: bold;
+}
+
+.pass-btn.cooling {
+  background: linear-gradient(135deg, #555, #333);
+  box-shadow: none;
+  cursor: not-allowed;
+  font-size: 1.2rem;
 }
 
 /* Buttons */

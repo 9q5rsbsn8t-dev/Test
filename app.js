@@ -7,14 +7,21 @@ const gameSection   = document.getElementById('gameSection');
 const resultSection = document.getElementById('resultSection');
 const bombEmoji     = document.getElementById('bombEmoji');
 const currentHolder = document.getElementById('currentHolder');
+const curseDisplay  = document.getElementById('curseDisplay');
 const passBtn       = document.getElementById('passBtn');
 const resultText    = document.getElementById('resultText');
 const replayBtn     = document.getElementById('replayBtn');
+
+const MAX_COOLDOWN = 3000; // ms
 
 let players = [];
 let holderIndex = 0;
 let bombTimeout = null;
 let active = false;
+let heldSince = 0;
+let curseInterval = null;
+let cooldownEnd = 0;
+let cooldownRaf = null;
 
 // ---- プレイヤー管理 ----
 function addPlayer() {
@@ -45,11 +52,37 @@ function renderPlayers() {
 addPlayerBtn.addEventListener('click', addPlayer);
 playerInput.addEventListener('keydown', e => { if (e.key === 'Enter') addPlayer(); });
 
+// ---- 呼じメーター（リアルタイム更新）----
+function startCurseDisplay() {
+  stopCurseDisplay();
+  curseInterval = setInterval(() => {
+    if (!active) return;
+    const held = Date.now() - heldSince;
+    const curse = Math.min(held * 0.5, MAX_COOLDOWN);
+    const secs = (curse / 1000).toFixed(1);
+    curseDisplay.textContent = `今パスすると次の人は ${secs} 秒待ち`;
+    curseDisplay.className = 'curse-display' + (curse >= 1500 ? ' hot' : '');
+
+    // 爆弾の揺れ速度を呼じに応じて変化（0.45s → 0.15s）
+    const ratio = curse / MAX_COOLDOWN;
+    const speed = 0.45 - ratio * 0.3;
+    bombEmoji.style.setProperty('--wiggle-speed', speed.toFixed(2) + 's');
+  }, 100);
+}
+
+function stopCurseDisplay() {
+  clearInterval(curseInterval);
+  curseDisplay.textContent = '';
+  curseDisplay.className = 'curse-display';
+  bombEmoji.style.removeProperty('--wiggle-speed');
+}
+
 // ---- ゲーム開始 ----
 function startGame() {
   if (players.length < 2) return;
   holderIndex = Math.floor(Math.random() * players.length);
   active = true;
+  heldSince = Date.now();
 
   setupSection.classList.add('hidden');
   resultSection.classList.add('hidden');
@@ -57,7 +90,11 @@ function startGame() {
 
   bombEmoji.className = 'bomb-emoji ticking';
   bombEmoji.textContent = '💣';
+  passBtn.disabled = false;
+  passBtn.textContent = '💨 パス！';
+  passBtn.classList.remove('cooling');
   updateHolder();
+  startCurseDisplay();
 
   const timeLimit = Math.floor(Math.random() * 15000) + 7000;
   bombTimeout = setTimeout(explode, timeLimit);
@@ -69,15 +106,49 @@ function updateHolder() {
 
 // ---- パス ----
 function pass() {
-  if (!active) return;
+  if (!active || passBtn.disabled) return;
+
+  // 呼じ計算
+  const held = Date.now() - heldSince;
+  const cooldown = Math.min(held * 0.5, MAX_COOLDOWN);
+
+  // 次の人へ渡す
   const prev = holderIndex;
   do {
     holderIndex = (holderIndex + 1) % players.length;
   } while (holderIndex === prev && players.length > 1);
+
+  heldSince = Date.now();
   updateHolder();
 
+  // 手渡しアニメ
   bombEmoji.style.transform = 'scale(1.4) rotate(15deg)';
   setTimeout(() => { bombEmoji.style.transform = ''; }, 200);
+
+  // クールダウン適用
+  if (cooldown > 300) {
+    applyPassCooldown(cooldown);
+  }
+}
+
+function applyPassCooldown(ms) {
+  passBtn.disabled = true;
+  passBtn.classList.add('cooling');
+  cooldownEnd = Date.now() + ms;
+
+  function tick() {
+    const remaining = cooldownEnd - Date.now();
+    if (remaining <= 0) {
+      passBtn.disabled = false;
+      passBtn.classList.remove('cooling');
+      passBtn.textContent = '💨 パス！';
+      cooldownRaf = null;
+      return;
+    }
+    passBtn.textContent = `⏳ あと ${(remaining / 1000).toFixed(1)} 秒...`;
+    cooldownRaf = requestAnimationFrame(tick);
+  }
+  cooldownRaf = requestAnimationFrame(tick);
 }
 
 passBtn.addEventListener('click', pass);
@@ -85,6 +156,9 @@ passBtn.addEventListener('click', pass);
 // ---- 爆発 ----
 function explode() {
   active = false;
+  stopCurseDisplay();
+  if (cooldownRaf) { cancelAnimationFrame(cooldownRaf); cooldownRaf = null; }
+
   bombEmoji.className = 'bomb-emoji exploding';
   bombEmoji.textContent = '💥';
   currentHolder.textContent = '';
@@ -105,13 +179,18 @@ function replay() {
 
 function backToSetup() {
   clearTimeout(bombTimeout);
+  if (cooldownRaf) { cancelAnimationFrame(cooldownRaf); cooldownRaf = null; }
   active = false;
+  stopCurseDisplay();
   gameSection.classList.add('hidden');
   resultSection.classList.add('hidden');
   setupSection.classList.remove('hidden');
   bombEmoji.className = 'bomb-emoji';
   bombEmoji.textContent = '💣';
   currentHolder.textContent = '';
+  passBtn.disabled = false;
+  passBtn.classList.remove('cooling');
+  passBtn.textContent = '💨 パス！';
 }
 
 startBtn.addEventListener('click', startGame);
