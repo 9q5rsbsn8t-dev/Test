@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>💣 爆弾ゲーム</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>💣 爆弾ゲーム</h1>
+    <p class="subtitle">爆発した時に持っていた人が飲む！</p>
+  </header>
+
+  <main>
+    <!-- プレイヤー設定 -->
+    <section id="setupSection" class="card">
+      <h2>メンバー登録</h2>
+      <div class="input-row">
+        <input type="text" id="playerInput" placeholder="名前を入力" maxlength="10" autocomplete="off">
+        <button id="addPlayerBtn">追加</button>
+      </div>
+      <div id="playerList" class="player-list"></div>
+      <button id="startBtn" class="big-btn" disabled>ゲームスタート！</button>
+    </section>
+
+    <!-- ゲーム中 -->
+    <section id="gameSection" class="card hidden">
+      <div class="bomb-area">
+        <div id="bombEmoji" class="bomb-emoji">💣</div>
+        <div id="currentHolder" class="current-holder"></div>
+      </div>
+      <button id="passBtn" class="big-btn pass-btn">💨 パス！</button>
+      <button id="resetBtn" class="reset-btn">← メンバー変更</button>
+    </section>
+
+    <!-- 結果 -->
+    <section id="resultSection" class="card hidden">
+      <div id="resultText" class="result-text"></div>
+      <button id="replayBtn" class="big-btn">もう一回！</button>
+      <button id="resetBtn2" class="reset-btn">← メンバー変更</button>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
