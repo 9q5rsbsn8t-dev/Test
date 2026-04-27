@@ -76,7 +76,6 @@ function pass() {
   } while (holderIndex === prev && players.length > 1);
   updateHolder();
 
-  // 手渡しアニメ
   bombEmoji.style.transform = 'scale(1.4) rotate(15deg)';
   setTimeout(() => { bombEmoji.style.transform = ''; }, 200);
 }
